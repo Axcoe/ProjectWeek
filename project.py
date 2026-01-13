@@ -1,127 +1,118 @@
-# import demucs.separate
 import streamlit as st
-import streamlit.components.v1 as components
 import yt_dlp
+import os
 from yt_dlp.utils import download_range_func
 
-st.set_page_config(
-    layout="wide"
-)
+# Configuration de la page
+st.set_page_config(layout="wide", page_title="YouTube Downloader")
 
+# --- DESIGN PERSONNALISÉ (CSS INJECTÉ) ---
 st.markdown("""
 <style>
+    /* Masquer le header et le footer de Streamlit */
+    header, footer {visibility: hidden;}
+    
+    /* Fond dégradé radial sur toute la page */
+    .stApp {
+        background: radial-gradient(
+            ellipse 150% 100% at center,
+            #006BE4 0%,
+            #004A9E 25%,
+            #003275 40%,
+            #001F4D 55%,
+            #010934 75%
+        ) !important;
+    }
 
-/* RESET TOTAL */
-html, body {
-    margin: 0 !important;
-    padding: 0 !important;
-}
+    /* Centrage du contenu */
+    .main .block-container {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        height: 100vh;
+    }
 
-/* App root */
-[data-testid="stApp"] {
-    margin: 0 !important;
-    padding: 0 !important;
-}
+    /* Style du conteneur de saisie */
+    .custom-container {
+        background: rgba(255, 255, 255, 0.1);
+        backdrop-filter: blur(8px);
+        padding: 2rem;
+        border-radius: 12px;
+        border: 2px solid white;
+        display: flex;
+        gap: 0;
+    }
 
-/* Header Streamlit (même invisible) */
-header {
-    height: 0rem !important;
-    min-height: 0rem !important;
-    margin: 0 !important;
-    padding: 0 !important;
-    display: none !important;
-}
+    /* Style de l'input Streamlit pour qu'il ressemble au vôtre */
+    .stTextInput input {
+        border-radius: 8px 0 0 8px !important;
+        border: 2px solid white !important;
+        height: 48px;
+        width: 400px !important;
+    }
 
-/* Main wrapper */
-section.main {
-    padding: 0 !important;
-    margin: 0 !important;
-}
-
-/* Vertical blocks internes */
-div[data-testid="stVerticalBlock"] {
-    padding: 0 !important;
-    margin: 0 !important;
-    gap: 0 !important;
-}
-
-/* Container principal */
-.block-container {
-    padding: 0 !important;
-    margin: 0 !important;
-    max-width: 100% !important;
-}
-
-/* CRUCIAL: Supprimer la marge du composant HTML */
-div[data-testid="stVerticalBlock"] > div:has(iframe) {
-    margin: 0 !important;
-    padding: 0 !important;
-}
-
-/* Iframe - Forcer la hauteur totale */
-iframe {
-    width: 100vw !important;
-    height: 100vh !important;
-    border: none !important;
-    display: block !important;
-    margin: 0 !important;
-    padding: 0 !important;
-    position: fixed !important;
-    top: 0 !important;
-    left: 0 !important;
-}
+    /* Style du bouton Streamlit */
+    .stButton button {
+        border-radius: 0 8px 8px 0 !important;
+        background-color: #2563eb !important; /* blue-600 */
+        color: white !important;
+        height: 48px;
+        border: 2px solid white !important;
+        border-left: none !important;
+        padding: 0 25px !important;
+        font-weight: 600;
+        transition: all 0.3s;
+    }
+    
+    .stButton button:hover {
+        background-color: #1d4ed8 !important; /* blue-700 */
+        transform: scale(1.02);
+    }
 </style>
 """, unsafe_allow_html=True)
 
-start_time = 0
-end_time = -1
-
-yt_opts = {
-    'verbose': True,
-    'cookies': 'cookies.txt',  # ← ICI
-    'download_ranges': download_range_func(None, [(start_time, end_time)]),
-    'force_keyframes_at_cuts': True,
-}
-
-with yt_dlp.YoutubeDL(yt_opts) as ydl:
-    ydl.download(["https://www.youtube.com/watch?v=Q0oIoR9mLwc"])
-
-
-# def separer_audio(enter_path_file):
-#     demucs.separate.main(["--mp3", "--two-stems", "vocals", "n", "mdx-extra", enter_path_file])
-#     print(f"Terminé! Les fichiers sont dans: separated")
-
-def main():
-    with open ("index.html", "r") as f:
-        html_data = f.read()
-
-    # Ajouter un script pour forcer le redimensionnement
-    html_with_script = html_data.replace('</body>', '''
-    <script>
-        // Envoyer la hauteur réelle de la fenêtre à Streamlit
-        function resizeIframe() {
-            const height = Math.max(
-                document.documentElement.scrollHeight,
-                document.body.scrollHeight,
-                window.innerHeight,
-                screen.height
-            );
-            window.parent.postMessage({
-                type: 'streamlit:setFrameHeight',
-                height: height
-            }, '*');
+# --- LOGIQUE DE TÉLÉCHARGEMENT ---
+def download_youtube_audio(url, start_time=2, end_time=7):
+    os.makedirs('downloads', exist_ok=True)
+    try:
+        yt_opts = {
+            'format': 'bestaudio/best',
+            'outtmpl': 'downloads/%(title)s.%(ext)s',
+            'noplaylist': True,
         }
+        if start_time is not None and end_time is not None:
+            yt_opts['download_ranges'] = download_range_func(None, [(start_time, end_time)])
+            yt_opts['force_keyframes_at_cuts'] = True
+            
+        with yt_dlp.YoutubeDL(yt_opts) as ydl:
+            info = ydl.extract_info(url, download=True)
+            return {'status': 'success', 'title': info.get('title', 'Audio')}
+    except Exception as e:
+        return {'status': 'error', 'message': str(e)}
 
-        window.addEventListener('load', resizeIframe);
-        window.addEventListener('resize', resizeIframe);
-
-        // Force initial resize
-        resizeIframe();
-    </script>
-    </body>''')
-
-    # Utiliser une grande hauteur par défaut
-    st.components.v1.html(html_with_script, height=1000, scrolling=False)
+# --- INTERFACE ---
+def main():
+    # Créer un conteneur pour centrer les éléments
+    with st.container():
+        # Utiliser des colonnes pour simuler le design côte à côte
+        col1, col2 = st.columns([3, 1], gap="small")
+        
+        with col1:
+            url_input = st.text_input("", placeholder="Lien YouTube", label_visibility="collapsed")
+        
+        with col2:
+            if st.button("Télécharger"):
+                if url_input:
+                    with st.status("Téléchargement...", expanded=False) as status:
+                        result = download_youtube_audio(url_input)
+                        if result['status'] == 'success':
+                            status.update(label=f"✅ {result['title']} téléchargé !", state="complete")
+                            st.toast(f"Fichier prêt : {result['title']}")
+                        else:
+                            status.update(label="❌ Erreur de téléchargement", state="error")
+                            st.error(result['message'])
+                else:
+                    st.warning("Veuillez entrer une URL")
 
 if __name__ == "__main__":
     main()

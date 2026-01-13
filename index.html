@@ -1,32 +1,57 @@
 <html>
-<head>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <style>
+    <head>
+        <script src="https://cdn.tailwindcss.com"></script>
+        <style>
         html, body {
             margin: 0;
             padding: 0;
             height: 100%;
             overflow: visible;
         }
-
         .radial-gradient {
             background: radial-gradient(
-                ellipse 150% 100% at center,
-                #006BE4 0%,
-                #004A9E 25%,
-                #003275 40%,
-                #001F4D 55%,
-                #010934 75%
+                            ellipse 150% 100% at center,
+            #006BE4 0%,
+            #004A9E 25%,
+            #003275 40%,
+            #001F4D 55%,
+            #010934 75%
             );
         }
-    </style>
-</head>
-
-<body>
-    <div class="h-[1000px] radial-gradient flex items-center justify-center">
-        <div class="border-2 border-black">
-            coucou
+        </style>
+    </head>
+    <body>
+        <div class="h-[1000px] radial-gradient flex items-center justify-center">
+            <div class="border-2 border-white rounded-lg p-6 bg-white/10 backdrop-blur-sm">
+            <input 
+                id="yt-url" 
+                type="text" 
+                placeholder="Lien YouTube" 
+                class="border-2 border-white bg-white/90 text-black px-4 py-2 rounded-l-lg focus:outline-none focus:ring-2 focus:ring-blue-300 w-96"
+            />
+            <button 
+                onclick="sendUrl()" 
+                class="border-2 border-white bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-r-lg font-semibold transition-colors"
+            >
+                Télécharger
+            </button>
+            </div>
         </div>
-    </div>
-</body>
+    </body>
+    <script>
+        function sendUrl() {
+        const url = document.getElementById("yt-url").value;
+        if (!url) {
+            alert("Entre un lien YouTube");
+            return;
+        }
+
+        // Encoder l'URL et recharger la page avec le paramètre
+        const encodedUrl = encodeURIComponent(url);
+        const currentUrl = window.location.href.split('?')[0];
+        window.parent.location.href = currentUrl + '?yt_url=' + encodedUrl;
+
+        console.log("URL envoyée:", url);
+        }
+    </script>
 </html>
