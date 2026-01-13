@@ -2,6 +2,10 @@ import streamlit as st
 import yt_dlp
 import os
 from yt_dlp.utils import download_range_func
+import demucs
+import demucs.separate
+import subprocess
+
 
 # Configuration de la page
 st.set_page_config(layout="wide", page_title="YouTube Downloader")
@@ -71,6 +75,17 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
+# --- LOGIQUE DE SEPRATION ---
+def separate_audio(input_path, output_path):
+    demucs.separate.main([
+        "--mp3", 
+        "--two-stems", "vocals", 
+        "-n", "mdx_extra", 
+        "-d", "cpu", 
+        input_path, 
+        "-o", output_path
+    ])
+
 # --- LOGIQUE DE TÉLÉCHARGEMENT ---
 def download_youtube_audio(url, start_time=2, end_time=7):
     os.makedirs('downloads', exist_ok=True)
@@ -79,13 +94,18 @@ def download_youtube_audio(url, start_time=2, end_time=7):
             'format': 'bestaudio/best',
             'outtmpl': 'downloads/%(title)s.%(ext)s',
             'noplaylist': True,
+            # --- AJOUT POUR CONVERTIR EN MP3 ---
+            'postprocessors': [{
+                'key': 'FFmpegExtractAudio',
+                'preferredcodec': 'mp3',
+                'preferredquality': '192',
+            }],
         }
-        if start_time is not None and end_time is not None:
-            yt_opts['download_ranges'] = download_range_func(None, [(start_time, end_time)])
-            yt_opts['force_keyframes_at_cuts'] = True
+        # On a supprimé la partie 'download_ranges' pour avoir toute la musique
             
         with yt_dlp.YoutubeDL(yt_opts) as ydl:
             info = ydl.extract_info(url, download=True)
+            # yt-dlp change l'extension en .mp3 après la conversion
             return {'status': 'success', 'title': info.get('title', 'Audio')}
     except Exception as e:
         return {'status': 'error', 'message': str(e)}
@@ -108,6 +128,8 @@ def main():
                         if result['status'] == 'success':
                             status.update(label=f"✅ {result['title']} téléchargé !", state="complete")
                             st.toast(f"Fichier prêt : {result['title']}")
+
+                            separate_audio(f"downloads/{result['title']}.mp3", "separated")
                         else:
                             status.update(label="❌ Erreur de téléchargement", state="error")
                             st.error(result['message'])
