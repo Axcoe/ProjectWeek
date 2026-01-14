@@ -6,15 +6,12 @@ import whisper
 import gc
 import time
 
-# --- CONFIGURATION ---
 st.set_page_config(layout="wide", page_title="STEMSY", page_icon="")
 
-# --- INITIALISATION SESSION STATE ---
 if 'processed' not in st.session_state: st.session_state.processed = False
 if 'title' not in st.session_state: st.session_state.title = ""
 if 'transcript' not in st.session_state: st.session_state.transcript = None
 
-# --- DESIGN AMÉLIORÉ (STRUCTURE ORIGINALE) ---
 st.markdown("""
 <style>
     @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;600;800&display=swap');
@@ -189,7 +186,6 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
-# --- LOGIQUE BACKEND ---
 def download_audio(url):
     os.makedirs('downloads', exist_ok=True)
     try:
@@ -222,15 +218,13 @@ def main():
                 if res['status'] == 'success':
                     title = res['title']
                     st.session_state.title = title
-                    
-                    # Étape 2 : Séparation
+
                     placeholder.empty()
                     with placeholder.container():
                         st.markdown('<div class="loader-static">FLUX RÉCUPÉRÉ</div>', unsafe_allow_html=True)
                         st.markdown(f'<div class="custom-loader">ÉTAPE 2 : ISOLATION IA (DEMUCS)...</div>', unsafe_allow_html=True)
                         separate_audio(f"downloads/{title}.mp3", "separated")
-                    
-                    # Étape 3 : Transcription
+
                     placeholder.empty()
                     with placeholder.container():
                         st.markdown('<div class="loader-static">FLUX RÉCUPÉRÉ</div>', unsafe_allow_html=True)
@@ -250,7 +244,6 @@ def main():
 
         st.markdown(f"<h3 style='color:#4facfe; text-align:center; margin-bottom:20px;'>{title}</h3>", unsafe_allow_html=True)
 
-        # --- MIXER ---
         col_mix_1, col_mix_2 = st.columns([3, 1])
         with col_mix_2:
             mode = st.radio("Mode d'écoute", ["Mix Complet", "Instrumental", "Vocals Only"], label_visibility="collapsed")
@@ -259,12 +252,10 @@ def main():
             st.audio(audio_source)
         st.markdown('</div>', unsafe_allow_html=True)
 
-        # --- LYRICS (SYNC) ---
         for i, segment in enumerate(st.session_state.transcript['segments']):
             st.markdown(f'<div class="lyric-line" id="line-{i}" data-start="{segment["start"]}" data-end="{segment["end"]}">{segment["text"]}</div>', unsafe_allow_html=True)
         st.markdown('</div>', unsafe_allow_html=True)
 
-        # JS SYNC
         js_sync = f"""
         <script>
             const audio = window.parent.document.querySelector('audio');
