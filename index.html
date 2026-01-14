@@ -20,17 +20,18 @@
         }
         </style>
     </head>
-    <body>
+
+    <body class="h-[1000px] radial-gradient">
         <div class="h-[1000px] radial-gradient flex items-center justify-center">
             <div class="border-2 border-white rounded-lg p-6 bg-white/10 backdrop-blur-sm">
-            <input 
-                id="yt-url" 
-                type="text" 
-                placeholder="Lien YouTube" 
+            <input
+                id="yt-url"
+                type="text"
+                placeholder="Lien YouTube"
                 class="border-2 border-white bg-white/90 text-black px-4 py-2 rounded-l-lg focus:outline-none focus:ring-2 focus:ring-blue-300 w-96"
             />
-            <button 
-                onclick="sendUrl()" 
+            <button
+                onclick="sendUrl()"
                 class="border-2 border-white bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-r-lg font-semibold transition-colors"
             >
                 Télécharger
@@ -38,6 +39,7 @@
             </div>
         </div>
     </body>
+
     <script>
         function sendUrl() {
         const url = document.getElementById("yt-url").value;
