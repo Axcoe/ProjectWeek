@@ -1,10 +1,12 @@
 import streamlit as st
 import yt_dlp
 import os
+from jinja2 import Template
 from yt_dlp.utils import download_range_func
 import demucs
 import demucs.separate
 import subprocess
+import base64
 
 
 # Configuration de la page
@@ -75,6 +77,14 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
+# --- LOGIQUE DE RÉCUPÉRATION DE PISTE ---
+
+def get_audio_html(file_path):
+    with open(file_path, "rb") as f:
+        audio_bytes = f.read()
+    audio_base64 = base64.b64encode(audio_bytes).decode()
+    return f"data:audio/mp3;base64,{audio_base64}"
+
 # --- LOGIQUE DE SEPRATION ---
 def separate_audio(input_path, output_path):
     demucs.separate.main([
@@ -130,6 +140,24 @@ def main():
                             st.toast(f"Fichier prêt : {result['title']}")
 
                             separate_audio(f"downloads/{result['title']}.mp3", "separated")
+                            # 1. Charger le fichier HTML
+                            with open("index.html", "r") as f:
+                                html_content = f.read()
+
+                            # 2. Créer le template et injecter les variables
+                            template = Template(html_content)
+                            html_final = template.render(
+                                titre_musique=result['title'],
+                                vocal_url=get_audio_html(f"separated/mdx_extra/{result['title']}/no_vocals.mp3"), # La fonction base64 d'avant
+                                # 3. Afficher dans Streamlit
+                            )
+                            st.markdown(html_final, unsafe_allow_html=True)
+                            audio_path = f"separated/mdx_extra/{result['title']}/no_vocals.mp3"
+                            if not os.path.exists(audio_path):
+                                st.error(f"Le fichier audio n'a pas été trouvé : {audio_path}")
+                                return
+                            st.audio(audio_path, format="audio/mp3")
+                            print(f"separated/mdx_extra/{result['title']}/vocals.mp3")
                         else:
                             status.update(label="❌ Erreur de téléchargement", state="error")
                             st.error(result['message'])
