@@ -1,0 +1,6 @@
+streamlit
+yt-dlp
+demucs
+openai-whisper
+torch
+torchaudio

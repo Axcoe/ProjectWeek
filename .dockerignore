@@ -1,0 +1,5 @@
+.venv
+downloads
+separated
+__pycache__
+.git
