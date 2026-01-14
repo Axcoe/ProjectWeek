@@ -7,7 +7,7 @@ import demucs
 import demucs.separate
 import subprocess
 import base64
-
+import whisper
 
 # Configuration de la page
 st.set_page_config(layout="wide", page_title="YouTube Downloader")
@@ -128,7 +128,7 @@ def main():
         col1, col2 = st.columns([3, 1], gap="small")
         
         with col1:
-            url_input = st.text_input("", placeholder="Lien YouTube", label_visibility="collapsed")
+            url_input = st.text_input("Lien YouTube", placeholder="Lien YouTube", label_visibility="collapsed")
         
         with col2:
             if st.button("Télécharger"):
@@ -140,24 +140,26 @@ def main():
                             st.toast(f"Fichier prêt : {result['title']}")
 
                             separate_audio(f"downloads/{result['title']}.mp3", "separated")
-                            # 1. Charger le fichier HTML
-                            with open("index.html", "r") as f:
-                                html_content = f.read()
-
-                            # 2. Créer le template et injecter les variables
-                            template = Template(html_content)
-                            html_final = template.render(
-                                titre_musique=result['title'],
-                                vocal_url=get_audio_html(f"separated/mdx_extra/{result['title']}/no_vocals.mp3"), # La fonction base64 d'avant
-                                # 3. Afficher dans Streamlit
-                            )
-                            st.markdown(html_final, unsafe_allow_html=True)
-                            audio_path = f"separated/mdx_extra/{result['title']}/no_vocals.mp3"
-                            if not os.path.exists(audio_path):
-                                st.error(f"Le fichier audio n'a pas été trouvé : {audio_path}")
-                                return
-                            st.audio(audio_path, format="audio/mp3")
-                            print(f"separated/mdx_extra/{result['title']}/vocals.mp3")
+                            no_vocals_path = f"separated/mdx_extra/{result['title']}/no_vocals.mp3"
+                            vocals_path = f"separated/mdx_extra/{result['title']}/vocals.mp3"
+                            # Afficher le lecteur audio pour la piste sans voix
+                            if os.path.exists(no_vocals_path):
+                                st.subheader("Piste instrumentale (sans voix)")
+                                st.audio(no_vocals_path, format="audio/mp3")
+                            else:
+                                st.error(f"Fichier no_vocals introuvable : {no_vocals_path}")
+                            # Transcription avec Whisper sur la piste vocale
+                            if os.path.exists(vocals_path):
+                                st.subheader("Transcription des voix (Whisper)")
+                                model = whisper.load_model("medium")
+                                result_transcript = model.transcribe(vocals_path)  # langue non spécifiée
+                                for segment in result_transcript['segments']:
+                                    start = segment['start'] # Début en secondes
+                                    end = segment['end']     # Fin en secondes
+                                    text = segment['text']    # Paroles
+                                    st.write(f"[{start:.2f}s - {end:.2f}s]: {text}")
+                            else:
+                                st.error(f"Fichier vocals introuvable : {vocals_path}")
                         else:
                             status.update(label="❌ Erreur de téléchargement", state="error")
                             st.error(result['message'])
